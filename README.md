@@ -1,4 +1,4 @@
 go-javascript
 =============
 
-Go libraries for using JavaScript
+Not ready yet.
