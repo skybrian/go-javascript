@@ -34,6 +34,13 @@ func TestEvalExprReportsSyntaxErrors(t *testing.T) {
 	checkEvalSyntaxError(t, "Unexpected token )", "[")
 }
 
+func TestEvalEach(t* testing.T) {
+	checkEvalEach(t)
+	checkEvalEach(t, "2+2", "4")
+	checkEvalEach(t, "2+2", "4", "2+3", "5")
+	checkEvalEach(t, `'hello'`, `'hello'`, `[1, 2, 3]`, `[ 1, 2, 3 ]`, `{"a": 1}`, `{ a: 1 }`)
+}
+
 // === end of tests ===
 
 func checkRunSilent(t *testing.T, script string, args ...string) {
@@ -77,5 +84,37 @@ func checkSyntaxError(t *testing.T, expectedError, in, out string, err error) {
 	actual := err.Error()
 	if !strings.Contains(actual, "\nSyntaxError: " + expectedError + "\n") {
 		t.Errorf("unexpected error: %v => %v", in, actual)
+	}
+}
+
+func checkEvalEach(t *testing.T, args... string) {
+	if len(args) % 2 != 0 {
+		t.Fatalf("wrong number of args to checkEvalEach: %v", len(args))
+	}
+	ins := []string {}
+	expected := []string {}
+	for i := 0; i < len(args); i += 2 {
+		ins = append(ins, args[i])
+		expected = append(expected, args[i + 1])
+	}
+	outs, err := EvalEach(ins...)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+		return
+	}
+	checkSlice(t, ins, outs, expected)
+}
+
+func checkSlice(t *testing.T, ins, outs, expectedOuts []string) {
+	if len(ins) != len(expectedOuts) {
+		t.Fatalf("number of expected outputs (%v) doesn't match number of inputs: %v", len(ins), len(expectedOuts))
+	} else if len(expectedOuts) != len(outs) {
+		t.Errorf("expected %v outputs; got %v", len(expectedOuts), len(outs))
+		return
+	}
+	for i := range outs {
+		if outs[i] != expectedOuts[i] {
+			t.Errorf("unexpected output: %v -> %v", ins[i], outs[i])
+		}
 	}
 }

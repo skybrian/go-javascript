@@ -4,6 +4,7 @@ package nodejs
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -53,6 +54,33 @@ func EvalExpr(expr string) (string, error) {
 		return "", err
 	}
 	return out[:len(out) - 1], nil
+}
+
+// EvalEach returns the value of each JavaScript expression, formatted according to Node's util.inspect.
+func EvalEach(exprs... string) ([]string, error) {
+	script := `
+var util = require("util");
+var results = [];
+for (var i = 1; i < process.argv.length; i++) {
+	results[i-1] = util.inspect(eval(process.argv[i]));
+}
+console.log(JSON.stringify(results));
+`
+	args := []string {}
+	for _, expr := range exprs {
+		args = append(args, "(" + expr + ")")
+	}
+
+	out, err := Run(script, args...)
+  	if err != nil {
+		return nil, err
+	}
+	outs := []string {}
+	err = json.Unmarshal([]byte(out), &outs)
+	if err != nil {
+		return nil, err
+	}
+	return outs, nil
 }
 
 type ExitError struct {
